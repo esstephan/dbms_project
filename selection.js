@@ -1,41 +1,40 @@
-//         ["SELECTION", ["movieId", "EQUALS", "5000"]],
+const { Node } = require("./queryConstructors");
 
-class SelectionNode {
-    constructor (query, nextQuery) {
-        this.query = query;
-        this.nextQuery = nextQuery;
-        this.next = () => {
-            const row = this.nextQuery.next();
-            if (!row) {
-                return;
-            }
-            if (row === 'EOF') {
-                return 'EOF';
-            }
-            const isSelected = this.doComparison(query, row);
-            if (isSelected) {
-                return row;
-            }
-            return;
-        }
-        this.doComparison = (query, row) => {
-            const field = query[0];
-            const comparator = query[1];
-            const target = query[2];
-            switch (comparator) {
-                case 'EQUALS':
-                    return row[field] === target;
-                case 'NOT EQUAL':
-                    return row[field] !== target;  
-                case 'IS NOT NULL':
-                    return !!row[field];
-                case 'IS NULL':
-                    return !row[field];
-                case 'IN':
-                    return target.includes(row[field]);      
-            }
-        }
-    }
-};
+class SelectionNode extends Node {
+  constructor(compareFunction) {
+    super();
+    this.next = () => {
+      const row = this.left.next();
+      if (row === "EOF") {
+        return "EOF";
+      }
+      const isSelected = this.doComparison(compareFunction, row);
+      if (isSelected) {
+        return row;
+      }
+    };
+    this.doComparison = (compareFunction, row) => {
+      const field = compareFunction[0];
+      const comparator = compareFunction[1];
+      const target = compareFunction[2];
+      switch (comparator) {
+        case "EQUALS":
+          return row[field] === target;
+        case "NOT EQUAL":
+          return row[field] !== target;
+        case "IS NOT NULL":
+          return !!row[field];
+        case "IS NULL":
+          return !row[field];
+        case "IN":
+          return target.includes(row[field]);
+        case ">":
+          return row[field] > target;
+        case "<":
+          return row[field] < target;
+      }
+    };
+  }
+}
 
 module.exports = SelectionNode;

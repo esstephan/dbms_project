@@ -1,8 +1,5 @@
-const filescan = require('./scan');
-
-const doComparison = (outerRow, innerRow, params) => {
-
-}
+const filescan = require("./scan");
+const { Node } = require("./queryConstructors");
 
 // -> Average
 //   -> Projection(lambda r: r.ratings_rating)
@@ -11,47 +8,51 @@ const doComparison = (outerRow, innerRow, params) => {
 //         -> FileScan('movies')
 //       -> FileScan('ratings')
 
-class nestedLoopsJoinNode (outer, inner, comparisonFunction, nextQuery) {
-    constructor (outer, inner, comparisonFunction, nextQuery) {
-        this.nextQuery = nextQuery;
-        this.state = {
-            outerLoopComplete: false,
-            innerLoopComplete: false,
-        }
-        this.next = () => {
-            const scanOuter = new ScanNode(outer);
-            const scanInner = new ScanNode(inner);
-            // establish state of outer loop
-        
-            // get first outer row
-            // call scan.js on outer table
-            // if 'EOF' we are done, return
-            while (!this.state.outerLoopComplete) {
-                let outerRow = scanOuter.next();
-                if (outerRow === 'EOF') {
-                    this.setState({outerLoopComplete: true});
-                    return;
-                }
-                while (!this.state.innerLoopComplete) {
-                    let innerRow = scanInner.next();
-                    const potentialJoin = 
-                }
-        
-            }
-        
-                // get inner row
-        }
-    }
+const joinFunctionStatic = (movie, rating) => {
+  console.log("movie", movie, "rating", rating);
+  if ((rating.movieId = movie.movieId)) {
+    return {
+      userId: rating.userId,
+      movieId: rating.movieId,
+      rating: rating.rating,
+      timestamp: rating.timestamp,
+      title: movie.title,
+      genres: movie.genres
+    };
+  }
+};
 
+class NestedLoopsJoinNode extends Node {
+  constructor(joinFunction) {
+    super();
+    this.state = {
+      outerLoopComplete: false,
+      innerLoopComplete: false
+    };
+    this.next = () => {
+      let outerRow, innerRow;
+      while (!this.state.outerLoopComplete) {
+        while (!outerRow) {
+          outerRow = this.left.next();
+        }
+
+        if (outerRow === "EOF") {
+          this.state.outerLoopComplete = true;
+          return "EOF";
+        }
+        while (!this.state.innerLoopComplete) {
+          innerRow = this.right.next();
+          if (innerRow === "EOF") {
+            this.state.innerLoopComplete = true;
+          }
+          const result = joinFunctionStatic(outerRow, innerRow);
+          if (result) {
+            return result;
+          }
+        }
+      }
+    };
+  }
 }
 
-
-
-class NestedLoopsJoin {
-    constructor (outer, inner, query) {
-        this.state = {
-            outerLoopComplete: false,
-            innerLoopComplete: false,
-        }
-    }
-}
+module.exports = NestedLoopsJoinNode;
